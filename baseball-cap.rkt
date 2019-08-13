@@ -25,15 +25,15 @@
 (define/contract (baseball-cap color [logo (blank 1)] [scale? #t])
   (->* ((or/c string? (is-a?/c color%))) (pict? boolean?) pict?)
 
-  ; BUG: Should sanity check the size of the logo
-  
+  ; Pict of the cap
   (define cap
     (dc (lambda (dc dx dy)
+          ; Save the current pen and brush
           (define old-brush (send dc get-brush))
           (define old-pen (send dc get-pen))
 
-          (send dc set-brush (new brush% [style 'solid]
-                                  [color color]))
+          ; Set a new brush with the specified color
+          (send dc set-brush (new brush% [style 'solid] [color color]))
           (send dc set-pen "Black" 2 'solid)
 
           ; Bill
@@ -73,10 +73,16 @@
           (send dc draw-ellipse 120 22 9 8)   
           (send dc draw-ellipse 198 28 9 8)   
           (send dc draw-ellipse 268 25 9 8)   
-      
+
+          ; Restore the original pen and brush
           (send dc set-brush old-brush)
           (send dc set-pen old-pen))
         342 278))
+
+  ; Sanity check the size of the logo
+  (when (or (zero? (pict-width logo))
+            (zero? (pict-height logo)))
+    (error 'baseball-cap "Logo has zero width or height"))
 
   ; Scale the logo and superimpose it in the center of the cap
   (let ([w (pict-width logo)]
@@ -93,13 +99,17 @@
                                           0 0 0 110)
                                    0 0.15))))))
 
+; Test cases
 (module+ main
-  ; Test cases
+  ; Create a blue cap with a "Racket" text logo
   (baseball-cap "LightSkyBlue" (text "Racket"))
 
+  ; A cap with the standard-fish logo, scaled to fit the cap
   (baseball-cap "LightSalmon" (standard-fish 100 50))
+  ; A standard-fish cap, with the logo unscaled
   (baseball-cap "LightSalmon" (inset (standard-fish 100 50) 20) #f)
 
-  ; A little love for my alma mater
+  ; A little love for my alma mater. You need to install the iu-pict
+  ; package using: raco pkg install iu-pict
   (require iu-pict)
   (baseball-cap (make-color 237 235 235) (iu-logo 80)))
